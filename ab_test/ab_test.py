@@ -13,7 +13,6 @@ class ab_aggregate:
   variant_conversions: int
   control_n: int
   control_n: int
-  
   """
   def __init__(self, control_conversions, variant_conversions, control_n, variant_n):
     self.control_conversions = control_conversions
@@ -25,9 +24,14 @@ class ab_aggregate:
     self.relative_uplift = (self.variant_ctr - self.control_ctr)/self.control_ctr
 
   def frequentist(self, one_tailed=True):
-    pooled_conversions = ( (self.control_conversions) + (self.variant_conversions) ) / ( (self.control_n) + (self.variant_n) )
-    # Z represents the number of standard deviations the observed difference of means is away from 0. The higher this number, the lesser the likelihood of H₀
-    z = (( self.variant_conversions / self.variant_n ) - ( self.control_conversions / self.control_n )) / np.sqrt( pooled_conversions * (1 - pooled_conversions) * ((1/self.control_n) + (1/self.variant_n)))
+    pooled_conversions = ( (self.control_conversions) + (self.variant_conversions) ) \
+      / ( (self.control_n) + (self.variant_n) )
+      
+    # Z represents the number of standard deviations the observed difference of means is away from 0.
+    # The higher this number, the lesser the likelihood of H₀
+    z = (( self.variant_conversions / self.variant_n ) - ( self.control_conversions / self.control_n )) \
+      / np.sqrt( pooled_conversions * (1 - pooled_conversions) * ((1/self.control_n) + (1/self.variant_n)))
+    
     se_control = (self.control_ctr*(1-self.control_ctr)/self.control_n)
     se_variant = (self.variant_ctr*(1-self.variant_ctr)/self.control_n)
     ci_95_lower = (self.variant_ctr - self.control_ctr) - 1.96*(np.sqrt(se_control + se_variant))
@@ -38,13 +42,20 @@ class ab_aggregate:
     else:
       p = 2 * (1 - stats.norm.cdf(z))
     
-    return print('Control CTR:', '{0:.4f}'.format(self.control_ctr*100), '%',
-                '\nVariant CTR:', '{0:.4f}'.format(self.variant_ctr*100), '%',
-                '\nRelative Uplift:', '{0:.2f}'.format(self.relative_uplift*100), '%',
-                '\nz-statistic:', '{0:.4f}'.format(z), 
-                '\np-value:', '{0:.4f}'.format(p), 
-                '\nConversion Rate Difference (variant-to-control):', '{0:.2f}'.format((self.variant_ctr - self.control_ctr)*100), '%',
-                '\nConfidence Interval for Conversion Rate Difference (95%): ', '[ {0:.4f}'.format(ci_95_lower*100), '% - ', '{0:.4f}'.format((ci_95_upper*100)), '% ]')
+    return print('Control CTR:', 
+                    '{0:.4f}'.format(self.control_ctr*100), '%',
+                '\nVariant CTR:',
+                    '{0:.4f}'.format(self.variant_ctr*100), '%',
+                '\nRelative Uplift:',
+                    '{0:.2f}'.format(self.relative_uplift*100), '%',
+                '\nz-statistic:',
+                    '{0:.4f}'.format(z), 
+                '\np-value:',
+                    '{0:.4f}'.format(p), 
+                '\nConversion Rate Difference (variant-to-control):',
+                    '{0:.2f}'.format((self.variant_ctr - self.control_ctr)*100), '%',
+                '\nConfidence Interval for Conversion Rate Difference (95%): ', 
+                    '[ {0:.4f}'.format(ci_95_lower*100), '% - ', '{0:.4f}'.format((ci_95_upper*100)), '% ]')
 
   def bayesian(self, prior_success = 0, prior_failure = 0, n_simulation = 1000):
     # setting prior parameters
@@ -88,7 +99,6 @@ class ab_aggregate:
                 '\nProbability variant is better than control (%):', probability_variant_is_better)
                 
 class ab_accumulating:
-
     """
     Parameters:
 
@@ -96,7 +106,6 @@ class ab_accumulating:
     variant_conversions: (n,) array of daily variant conversions
     control_n: (n,) array of daily control counts
     control_n: (n,) array of daily variant counts
-
     """
 
     def __init__(self, control_conversions, variant_conversions, control_n, variant_n):
@@ -126,8 +135,14 @@ class ab_accumulating:
 
         for day in range(1, days+1):
             days_append.append(day)
-            sim_posterior_control = np.random.beta(prior_alpha+self.control_conversions[:day].sum(), prior_beta+control_failure[:day].sum(), size=n_simulation)
-            sim_posterior_variant = np.random.beta(prior_alpha+self.variant_conversions[:day].sum(), prior_beta+variant_failure[:day].sum(), size=n_simulation)
+            sim_posterior_control = np.random.beta(
+              prior_alpha+self.control_conversions[:day].sum(),
+              prior_beta+control_failure[:day].sum(), size=n_simulation)
+            
+            sim_posterior_variant = np.random.beta(
+              prior_alpha+self.variant_conversions[:day].sum(),
+              prior_beta+variant_failure[:day].sum(), size=n_simulation)
+            
             probability_variant_is_better = np.mean(sim_posterior_control < sim_posterior_variant)*100
             probability_variant_is_better_append.append(probability_variant_is_better)
         
